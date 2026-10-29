@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#11131b">
+  <title>KIRI — Character Status Manager</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0c0e14; --surface:#141823; --surface2:#191e2b; --surface3:#202637; --border:#303649; --text:#e9edf8; --muted:#929bb1; --accent:#8da4fa; --accent2:#c2a8fa; --green:#7dd9ac; --red:#ff939c; --radius:16px; }
+    * {box-sizing:border-box}
+    html,body{margin:0;min-height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+    body{background:radial-gradient(ellipse 70% 50% at 90% -10%,#262449 0%,transparent 65%),var(--bg)}
+    button,input,textarea{font:inherit} button{cursor:pointer} button:disabled{opacity:.35;cursor:not-allowed} button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+    .shell{min-height:100vh;display:grid;grid-template-columns:268px minmax(0,1fr)}
+    .sidebar{background:#11141e;border-right:1px solid var(--border);padding:25px 15px;display:flex;flex-direction:column;gap:23px;min-height:100vh}
+    .brand{display:flex;gap:12px;align-items:center;padding:0 9px}
+    .logo{height:39px;width:39px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(145deg,#718bf6,#ad8ce4);font-size:20px;font-weight:900;color:#101523;box-shadow:0 9px 25px #586aca37}
+    .brand-title{font-size:17px;letter-spacing:.15em;font-weight:850}.brand-sub{font-size:10px;letter-spacing:.09em;color:var(--muted);margin-top:2px;text-transform:uppercase}
+    .side-heading{padding:0 9px;display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+    .count{color:var(--accent);font-size:12px}
+    .search{height:40px;padding:0 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);width:100%;font-size:13px}
+    .character-list{display:flex;flex-direction:column;gap:7px;max-height:55vh;overflow-y:auto}
+    .character-item{text-align:left;width:100%;padding:12px 10px;display:flex;align-items:center;gap:11px;border:1px solid transparent;border-radius:12px;background:transparent;color:var(--text)}
+    .character-item:hover{background:var(--surface2)} .character-item.active{background:#252a3c;border-color:#3b4668}
+    .avatar{flex:0 0 auto;height:35px;width:35px;border:1px solid #57668d;border-radius:11px;display:grid;place-items:center;font-size:15px;background:#303b5d;color:#dce5ff;font-weight:800}
+    .character-item:not(.active) .avatar{background:#242b3b;border-color:#3a435b}
+    .char-txt{min-width:0;flex:1}.char-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:650;font-size:13px}.char-rank{font-size:11px;color:var(--muted);margin-top:3px}
+    .tiny-star{color:var(--accent2);font-size:14px}
+    .side-foot{margin-top:auto;border-top:1px solid var(--border);padding-top:16px;display:grid;gap:8px}
+    .foot-caption{font-size:11px;line-height:1.55;color:var(--muted);padding:4px 7px}
+    .main{min-width:0;padding:30px clamp(18px,3.3vw,48px) 55px;max-width:1550px;width:100%;margin:0 auto}
+    .topbar{display:flex;align-items:flex-start;gap:16px;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap}
+    .eyebrow{font-size:11px;letter-spacing:.19em;font-weight:750;color:var(--accent);margin-bottom:9px}
+    h1{font-size:clamp(24px,3vw,34px);margin:0 0 7px;letter-spacing:-.035em;line-height:1.1}h2{margin:0;font-size:16px;letter-spacing:-.015em}p{margin:0}
+    .subtitle{color:var(--muted);font-size:13px;line-height:1.55}
+    .top-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:10px;padding:10px 13px;font-size:12.5px;font-weight:700;display:inline-flex;justify-content:center;align-items:center;gap:7px;min-height:39px}
+    .btn:hover{background:var(--surface3);border-color:#56607b}.btn.primary{border-color:#a1b2ff;background:#8da4fa;color:#111725}.btn.primary:hover{background:#afc0ff}.btn.ghost{background:transparent}.btn.danger{border-color:#5c3942;color:#ffb6bb}.btn.iconbtn{width:34px;min-height:34px;padding:0;font-size:18px;font-weight:400}
+    .btn.small{min-height:32px;padding:6px 10px;font-size:12px}
+    .workspace{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(315px,.85fr);align-items:start;gap:19px}
+    .stack{display:grid;gap:18px;min-width:0}.panel{background:linear-gradient(155deg,#191d29,#141824);border:1px solid var(--border);border-radius:var(--radius);padding:21px;box-shadow:0 10px 32px #00000012;min-width:0}
+    .panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:10px;flex-wrap:wrap}.panel-lede{font-size:12px;color:var(--muted);margin-top:5px}
+    .pill{border:1px solid #605280;color:#cdbbff;background:#2c263d;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+    .fields{display:grid;grid-template-columns:1fr 1fr;gap:15px}.field{display:flex;flex-direction:column;gap:7px;min-width:0}.field.wide{grid-column:1/-1}
+    label{font-size:11px;font-weight:750;color:#b7bfd1;letter-spacing:.035em}
+    .input{width:100%;min-height:40px;color:var(--text);background:#10141d;border:1px solid var(--border);border-radius:9px;padding:10px 11px;font-size:13px;outline:0;min-width:0}
+    .input::placeholder{color:#6e7891}.input:focus{border-color:#859bf2;box-shadow:0 0 0 2px #8196f224}
+    .rank-box{margin-top:16px;background:#111622;border:1px solid #333d55;border-radius:12px;padding:12px 13px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .rank-name{font-size:15px;font-weight:800;margin-top:4px}.rank-label{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.1em}
+    .core-controls{display:flex;align-items:center;gap:11px}.core-value{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;min-width:22px;text-align:center}
+    .input-combo{display:flex;align-items:center;gap:8px;margin-top:12px}.input-combo .input{flex:1}
+    .tags{display:flex;flex-wrap:wrap;gap:8px;min-height:38px}.tag{padding:7px 9px;border-radius:9px;border:1px solid #445175;background:#252e47;display:flex;gap:9px;align-items:center;font-size:12px;font-weight:650;color:#d9e3ff}.tag button{background:none;border:0;color:#a4b1d4;font-size:16px;padding:0;line-height:1}.tag button:hover{color:#fff}
+    .empty{font-size:12px;color:var(--muted);border:1px dashed #3b4358;padding:12px;border-radius:10px;width:100%;text-align:center}
+    .skill-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #2a3041}.skill-row:last-child{border-bottom:0}.skill-row .input{min-height:36px}
+    .level{display:flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:9px;background:#111621;padding:3px 5px}
+    .level button{font-size:17px;border:0;background:transparent;color:var(--accent);min-width:25px;min-height:28px}.level button:hover{background:#242d42;border-radius:5px}
+    .level input{background:none;color:var(--text);border:0;width:43px;font-size:12px;text-align:center;font-weight:800;outline:0;font-variant-numeric:tabular-nums}
+    .micro{font-size:11px;line-height:1.5;color:var(--muted);margin-top:13px}
+    .preview-panel{position:sticky;top:20px}.preview-label{color:var(--green);font-size:10px;letter-spacing:.1em;font-weight:800;text-transform:uppercase}
+    .paper{background:#0d111b;border:1px solid #394257;border-radius:12px;margin:17px 0;padding:16px 12px;overflow-x:auto}
+    pre{font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;white-space:pre;font-size:12px;line-height:1.55;margin:0;color:#e9edf8;display:block;width:max-content;min-width:100%}
+    .preview-actions{display:flex;gap:8px}.preview-actions .btn{flex:1}.preview-info{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--muted);gap:12px;margin-top:15px}
+    .tip{padding:13px 14px;border-radius:12px;background:#1b2332;border:1px solid #3c4760;color:#b6c4e4;font-size:12px;line-height:1.6}
+    .side-btn{width:100%;justify-content:center}.toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,20px);background:#283149;color:#fff;border:1px solid #6475a5;padding:12px 16px;border-radius:12px;font-size:12px;opacity:0;pointer-events:none;transition:.2s;z-index:100;box-shadow:0 12px 40px #0007;max-width:90vw;text-align:center}.toast.show{opacity:1;transform:translate(-50%,0)}
+    dialog{background:#191e2c;color:var(--text);border:1px solid #4e5974;border-radius:16px;padding:24px;max-width:min(420px,calc(100vw - 35px));width:100%;box-shadow:0 30px 90px #000b}dialog::backdrop{background:#03050aba;backdrop-filter:blur(3px)}dialog h2{margin-bottom:7px}dialog p{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:18px}.dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+    @media(max-width:1110px){.workspace{grid-template-columns:1fr}.preview-panel{position:static}.main{padding:24px}.shell{grid-template-columns:225px minmax(0,1fr)}}
+    @media(max-width:680px){.shell{display:block}.sidebar{min-height:auto;padding:15px 16px 13px;gap:13px;border-right:0;border-bottom:1px solid var(--border)}.brand{padding:0}.brand-sub{font-size:9px}.logo{width:32px;height:32px;border-radius:9px;font-size:17px}.brand-title{font-size:15px}.side-heading{display:none}.search{display:block;width:100%}.character-list{flex-direction:row;max-height:none;overflow-x:auto;gap:7px;padding-bottom:3px}.character-item{flex:0 0 auto;width:auto;max-width:200px;padding:9px 10px}.character-item .avatar{height:30px;width:30px}.character-item .char-txt{max-width:130px}.side-foot{margin:0;padding:0;border:0;display:flex;gap:7px;flex-wrap:wrap}.side-foot .btn{flex:1}.foot-caption{display:none}.main{padding:21px 14px 40px}.topbar{gap:12px;margin-bottom:18px}.top-actions{width:100%}.top-actions .btn{flex:1}.panel{padding:17px}.fields{gap:11px}.workspace{gap:14px}.paper{padding:13px 10px}pre{font-size:11.5px}.skill-row{grid-template-columns:minmax(0,1fr) auto auto;gap:5px}.level{gap:0}.level input{width:32px}.level button{min-width:22px}.btn.iconbtn{width:30px}.input-combo{gap:6px}}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar" aria-label="Daftar karakter">
+    <div class="brand"><div class="logo">K</div><div><div class="brand-title">KIRI</div><div class="brand-sub">Character Status Manager</div></div></div>
+    <div>
+      <div class="side-heading"><span>Karakter</span><span class="count" id="char-count">1</span></div>
+      <div style="margin:12px 0 10px"><input id="search" class="search" placeholder="Cari karakter..." aria-label="Cari karakter" autocomplete="off"></div>
+      <div id="characters" class="character-list"></div>
+    </div>
+    <div class="side-foot">
+      <button id="add-character" class="btn side-btn primary" type="button">＋ Karakter Baru</button>
+      <button id="export-data" class="btn side-btn" type="button">↓ Backup JSON</button>
+      <button id="import-data" class="btn side-btn ghost" type="button">↑ Pulihkan Backup</button><button id="undo-change" class="btn side-btn ghost" type="button" disabled>↶ Undo</button>
+      <input id="import-file" type="file" accept="application/json,.json" hidden>
+      <div class="foot-caption">Data disimpan otomatis di browser perangkat ini. Gunakan Backup JSON agar data aman jika browser dibersihkan atau berpindah perangkat.</div>
+    </div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div><div class="eyebrow">NOVEL WORKSPACE / STATUS</div><h1 id="page-title">Kiri Finslein</h1><p class="subtitle">Kelola status dengan mudah. Format salinan selalu konsisten.</p></div>
+      <div class="top-actions"><button id="duplicate-char" class="btn" type="button">⧉ Duplikasi</button><button id="delete-char" class="btn danger" type="button">Hapus Karakter</button></div>
+    </div>
+    <div class="workspace">
+      <div class="stack">
+        <section class="panel" aria-labelledby="identity-title">
+          <div class="panel-header"><div><h2 id="identity-title">Identitas & Rank</h2><p class="panel-lede">Edit informasi dasar karakter.</p></div><span class="pill" id="role-badge">Protagonis</span></div>
+          <div class="fields">
+            <div class="field wide"><label for="field-name">Name</label><input class="input" id="field-name" data-field="name" placeholder="Nama karakter" maxlength="110"></div>
+            <div class="field"><label for="field-age">Age</label><input class="input" id="field-age" data-field="age" type="number" min="0" max="999" placeholder="Belum ditentukan"></div>
+            <div class="field"><label for="field-aspect">Aspect</label><input class="input" id="field-aspect" data-field="aspect" placeholder="Belum ditentukan" maxlength="120"></div>
+          </div>
+          <div class="rank-box"><div><div class="rank-label">Rank · otomatis dari Core</div><div class="rank-name" id="rank-name">Awakener</div></div><div class="core-controls"><button id="core-minus" class="btn iconbtn" aria-label="Kurangi Core" type="button">−</button><span id="core-count" class="core-value">1</span><button id="core-plus" class="btn iconbtn" aria-label="Tambah Core" type="button">+</button></div></div>
+          <p class="micro">1 Awakener · 2 Master · 3 Grandmaster · 4 Ascendant · 5 Transcendent · 6 Saint. Rank di atas 6 Core belum ditentukan.</p>
+        </section>
+        <section class="panel" aria-labelledby="attr-title">
+          <div class="panel-header"><div><h2 id="attr-title">Attribute</h2><p class="panel-lede">Jenis Mana yang dimiliki karakter.</p></div><span class="count" id="attr-count">0 atribut</span></div>
+          <div id="attributes" class="tags"></div>
+          <form id="attr-form" class="input-combo"><input id="attr-add" class="input" maxlength="110" placeholder="Mis. Shadow, Divine, Neutral" aria-label="Nama Attribute baru"><button class="btn" type="submit">＋ Tambah</button></form>
+        </section>
+        <section class="panel" aria-labelledby="skill-title">
+          <div class="panel-header"><div><h2 id="skill-title">Skill</h2><p class="panel-lede" id="skill-desc">Level penguasaan hanya untuk Kiri.</p></div><span class="count" id="skill-count">0 skill</span></div>
+          <div id="skills"></div>
+          <form id="skill-form" class="input-combo"><input id="skill-add" class="input" maxlength="140" placeholder="Nama Skill baru" aria-label="Nama Skill baru"><button class="btn" type="submit">＋ Skill</button></form>
+          <p class="micro" id="skill-hint">Level menunjukkan penguasaan, bukan jumlah teknik yang terbuka.</p>
+        </section>
+      </div>
+      <div class="stack">
+        <section class="panel preview-panel" aria-labelledby="preview-title">
+          <div class="panel-header"><div><h2 id="preview-title">Status Generator</h2><p class="panel-lede">Pratinjau format yang akan disalin.</p></div><div class="preview-label">● Siap Salin</div></div>
+          <div class="field" style="margin-top:12px"><label for="view-mode">Tampilan status</label><select id="view-mode" class="input"><option value="author">Catatan penulis (lengkap)</option><option value="kiri">Yang terlihat oleh Kiri</option></select></div><label id="hidden-wrap" style="display:none;margin-top:12px;font-size:12px;color:var(--muted)"><input id="hide-powerful" type="checkbox"> Informasi target terlalu kuat / tersembunyi</label><div class="paper"><pre id="status-preview"></pre></div>
+          <div class="preview-actions"><button id="copy-status" class="btn primary" type="button">⧉ Salin Status</button></div>
+          <div class="preview-info"><span id="preview-role">Kiri · Level Skill ditampilkan</span><span id="save-indicator">Memeriksa penyimpanan...</span></div>
+        </section>
+        <div class="tip">✦ <strong>Fokus versi 1:</strong> editor karakter, Skill, Attribute, Rank otomatis, salin status, dan backup. Usia dan Skill awal Kiri sengaja dibiarkan kosong jika belum ditetapkan sebagai kanon.</div>
+      </div>
+    </div>
+  </main>
+</div>
+<dialog id="new-character-dialog" aria-labelledby="dialog-title">
+  <form id="new-char-form"><h2 id="dialog-title">Karakter Baru</h2><p>Mulai dengan data sederhana. Skill dan Attribute dapat ditambahkan kemudian.</p><div class="field"><label for="new-char-name">Name</label><input id="new-char-name" class="input" required maxlength="110" placeholder="Nama karakter" autocomplete="off"></div><div class="dialog-actions"><button id="cancel-new" class="btn" type="button">Batal</button><button class="btn primary" type="submit">Buat Karakter</button></div></form>
+</dialog>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script>
+'use strict';
+(() => {
+  const KEY = 'kiri-character-status-manager-v1';
+  const RANKS = {1:'Awakener',2:'Master',3:'Grandmaster',4:'Ascendant',5:'Transcendent',6:'Saint'};
+  const DIV = '════════════════════════════';
+  const $ = (id) => document.getElementById(id);
+  const escape = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const uid = () => 'c_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,9);
+  const normalizeNumber = (n, def=1) => Number.isFinite(Number(n)) ? Math.max(1, Math.min(1000000,Math.trunc(Number(n)))) : def;
+  const fresh = () => ({id:'kiri-main',isMain:true,name:'Kiri Finslein',age:'',core:1,aspect:'Farmer',attributes:[],skills:[]});
+  const defaultState = () => ({version:1,selectedId:'kiri-main',characters:[fresh()]});
+  const safeText = (v,max=140) => String(v??'').replace(/[\r\n\u2028\u2029\x00-\x1f\x7f]/g,' ').trim().slice(0,max);
+  const unique = arr => [...new Map(arr.map(x=>[x.toLowerCase(),x])).values()];
+  const cleanCharacter = (item, index) => {
+    if(!item || typeof item!=='object' || Array.isArray(item))throw Error('Data karakter tidak valid.');
+    const skills=Array.isArray(item.skills)?item.skills.filter(x=>x&&typeof x.name==='string').map(x=>({id:safeText(x.id||uid(),100),name:safeText(x.name,140),level:normalizeNumber(x.level)})).filter(x=>x.name).slice(0,1000):[];
+    const skillNames=new Set();
+    return {
+      id:safeText(item.id||uid(),100),isMain:Boolean(item.isMain),
+      name:safeText(item.name,110),age:item.age===''||item.age==null?'':String(Math.max(0,Math.min(999,Math.trunc(Number(item.age)||0)))),
+      core:normalizeNumber(item.core),aspect:safeText(item.aspect,120),
+      attributes:unique((Array.isArray(item.attributes)?item.attributes:[]).filter(x=>typeof x==='string').map(x=>safeText(x,110)).filter(Boolean)).slice(0,500),
+      skills:skills.filter(x=>{const k=x.name.toLowerCase();if(skillNames.has(k))return false;skillNames.add(k);return true;})
+    };
+  };
+  function validateState(raw){
+    if(!raw||!Array.isArray(raw.characters)||!raw.characters.length||raw.characters.length>2000)throw Error('Format backup tidak sesuai.');
+    const characters=raw.characters.map(cleanCharacter),ids=new Set(characters.map(c=>c.id));
+    if(ids.size!==characters.length)throw Error('ID karakter duplikat.');
+    const main=characters.find(c=>c.id==='kiri-main')||characters.find(c=>c.isMain);
+    if(!main)throw Error('Karakter utama Kiri tidak ditemukan.');
+    for(const c of characters){c.isMain=c===main;if(new Set(c.skills.map(x=>x.id)).size!==c.skills.length)throw Error('ID Skill duplikat.');}
+    characters.sort((a,b)=>Number(b.isMain)-Number(a.isMain));
+    return {version:2,selectedId:ids.has(raw.selectedId)?raw.selectedId:main.id,characters};
+  }
+  let state, storageOK=false, undoStack=[], lastSaved='', loadError=false;
+  try {const stored=localStorage.getItem(KEY);state=stored?validateState(JSON.parse(stored)):defaultState();}
+  catch {state=defaultState();loadError=true;}
+  function snapshot(){undoStack.push(JSON.stringify(state));if(undoStack.length>50)undoStack.shift();$('undo-change').disabled=false;}
+  function undo(){if(!undoStack.length)return;state=validateState(JSON.parse(undoStack.pop()));$('undo-change').disabled=!undoStack.length;persist();renderAll();toast('Perubahan dibatalkan.');}
+  let toastTimer;
+  const toast = (msg) => { const el=$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2300) };
+  const selected = () => state.characters.find(c=>c.id===state.selectedId) || state.characters[0];
+  const rank = c => RANKS[c.core] || 'Belum ditentukan';
+  function persist(){try{const data=JSON.stringify(state);localStorage.setItem(KEY,data);lastSaved=data;storageOK=true;$('save-indicator').textContent='● Tersimpan di browser';}catch{storageOK=false;$('save-indicator').textContent='⚠ Gagal menyimpan! Backup JSON sekarang';toast('Penyimpanan gagal. Segera unduh Backup JSON!');}}
+  const txt = val => String(val??'').trim() || '—';
+  const statusText = (c) => {
+    const inspect=$('view-mode').value==='kiri'&&!c.isMain;
+    const blocked=inspect&&$('hide-powerful').checked;
+    return [
+    DIV,'           STATUS',DIV,'',
+    'Name      : '+(blocked?'???':txt(c.name)),'Age       : '+(blocked?'???':txt(c.age)),'Rank      : '+(blocked?'???':rank(c)),'Aspect    : '+(blocked?'???':txt(c.aspect)),'',
+    'Attribute :',...(blocked?['• ???']:(c.attributes.length?c.attributes.map(a=>'• '+txt(a)):['• —'])),'',
+    'Skill :',...(blocked?['• ???']:(inspect?['• ???']:(c.skills.length?c.skills.map(s=>'• '+txt(s.name)+(c.isMain?' ['+normalizeNumber(s.level)+']':'')):['• —']))),'',DIV
+  ].join('\n');
+  };
+  function renderSidebar(){
+    const q=$('search').value.trim().toLowerCase();
+    $('char-count').textContent=state.characters.length;
+    const arr=state.characters.filter(c=>c.name.toLowerCase().includes(q));
+    $('characters').innerHTML=arr.length ? arr.map(c=>`<button type="button" class="character-item ${c.id===state.selectedId?'active':''}" data-id="${escape(c.id)}"><span class="avatar">${escape((c.name.trim()||'?').slice(0,1).toUpperCase())}</span><span class="char-txt"><span class="char-name" style="display:block">${escape(txt(c.name))}</span><span class="char-rank" style="display:block">${escape(rank(c))}</span></span>${c.isMain?'<span class="tiny-star" title="Protagonis">✦</span>':''}</button>`).join('') : '<p class="empty">Karakter tidak ditemukan.</p>';
+  }
+  function renderAttributes(c){
+    $('attr-count').textContent=c.attributes.length+' atribut';
+    $('attributes').innerHTML=c.attributes.length ? c.attributes.map((a,i)=>`<span class="tag">${escape(a)}<button data-remove-attr="${i}" type="button" aria-label="Hapus ${escape(a)}">×</button></span>`).join(''):'<div class="empty">Belum ada Attribute.</div>';
+  }
+  function renderSkills(c){
+    $('skill-count').textContent=c.skills.length+' skill';
+    $('skill-desc').textContent=c.isMain?'Level penguasaan Skill milik Kiri.':'Untuk karakter lain, cukup simpan nama Skill.';
+    $('skill-hint').textContent=c.isMain?'Level menunjukkan penguasaan, bukan jumlah teknik yang terbuka.':'Level Skill karakter lain tidak dicatat atau ditampilkan.';
+    $('skills').innerHTML=c.skills.length?c.skills.map((s,i)=>`<div class="skill-row"><input class="input" aria-label="Nama Skill ${i+1}" data-skill-name="${escape(s.id)}" value="${escape(s.name)}" maxlength="140">${c.isMain?`<div class="level"><button type="button" data-level-minus="${escape(s.id)}" aria-label="Kurangi level" ${s.level<=1?'disabled':''}>−</button><input type="number" min="1" max="1000000" aria-label="Level penguasaan" data-level-input="${escape(s.id)}" value="${s.level}"><button type="button" data-level-plus="${escape(s.id)}" aria-label="Tambah level">+</button></div>`:'<span></span>'}<button type="button" class="btn iconbtn danger" data-remove-skill="${escape(s.id)}" aria-label="Hapus Skill">×</button></div>`).join(''):'<div class="empty">Belum ada Skill.</div>';
+  }
+  function renderPreview(c){$('hidden-wrap').style.display=($('view-mode').value==='kiri'&&!c.isMain)?'block':'none';$('status-preview').textContent=statusText(c);$('preview-role').textContent=c.isMain?'Kiri · Level Skill ditampilkan':$('view-mode').value==='kiri'?'Inspeksi Kiri · Skill disembunyikan':'Catatan penulis · Tanpa level Skill';}
+  function renderAll(){
+    const c=selected();if(!c)return;
+    $('page-title').textContent=c.name.trim()||'Karakter tanpa nama';
+    $('field-name').value=c.name;$('field-age').value=c.age;$('field-aspect').value=c.aspect;
+    $('core-count').textContent=c.core;$('rank-name').textContent=rank(c);
+    $('core-minus').disabled=c.core<=1;
+    $('role-badge').textContent=c.isMain?'Protagonis':'Karakter';
+    $('role-badge').style.visibility=c.isMain?'visible':'hidden';
+    $('delete-char').disabled=c.isMain;
+    renderSidebar();renderAttributes(c);renderSkills(c);renderPreview(c);
+  }
+  function changes(){persist();renderSidebar();renderPreview(selected())}
+  $('view-mode').addEventListener('change',()=>renderPreview(selected()));
+  $('hide-powerful').addEventListener('change',()=>renderPreview(selected()));
+  $('undo-change').addEventListener('click',undo);
+  document.querySelectorAll('[data-field]').forEach(el=>el.addEventListener('focus',()=>{el.dataset.before=JSON.stringify(state)}));
+  document.querySelectorAll('[data-field]').forEach(el=>el.addEventListener('change',()=>{if(el.dataset.before&&el.dataset.before!==JSON.stringify(state)){undoStack.push(el.dataset.before);if(undoStack.length>50)undoStack.shift();$('undo-change').disabled=false;}delete el.dataset.before;if(el.dataset.field==='age')el.value=selected().age;}));
+  window.addEventListener('storage',e=>{if(e.key!==KEY||!e.newValue||e.newValue===lastSaved)return;try{const remote=validateState(JSON.parse(e.newValue));if(confirm('Data berubah di tab lain. Muat versi terbaru? Tekan Batal untuk tetap menggunakan perubahan di tab ini.')){state=remote;undoStack=[];$('undo-change').disabled=true;lastSaved=e.newValue;renderAll();}else{$('save-indicator').textContent='⚠ Konflik antartab — buat backup sebelum mengedit';}}catch{toast('Data dari tab lain tidak valid.');}});
+
+  $('characters').addEventListener('click',e=>{const el=e.target.closest('[data-id]');if(!el)return;state.selectedId=el.dataset.id;persist();renderAll();});
+  $('search').addEventListener('input',renderSidebar);
+  document.querySelectorAll('[data-field]').forEach(inp=>inp.addEventListener('input',()=>{
+    const c=selected(),f=inp.dataset.field;
+    c[f]=f==='age'?(inp.value===''?'':String(Math.max(0,Math.min(999,Math.trunc(Number(inp.value)||0))))):inp.value;
+    if(f==='name')$('page-title').textContent=c.name.trim()||'Karakter tanpa nama';
+    changes();
+  }));
+  function shiftCore(n){snapshot();const c=selected();c.core=Math.max(1,Math.min(1000000,c.core+n));persist();$('core-count').textContent=c.core;$('rank-name').textContent=rank(c);$('core-minus').disabled=c.core<=1;renderSidebar();renderPreview(c);}
+  $('core-minus').addEventListener('click',()=>shiftCore(-1));$('core-plus').addEventListener('click',()=>shiftCore(1));
+  $('attr-form').addEventListener('submit',e=>{e.preventDefault();const c=selected(),input=$('attr-add'),name=safeText(input.value,110);if(!name)return;if(c.attributes.some(a=>a.toLowerCase()===name.toLowerCase())){toast('Attribute sudah ada.');return}snapshot();c.attributes.push(name);input.value='';persist();renderAttributes(c);renderPreview(c);input.focus();});
+  $('attributes').addEventListener('click',e=>{const btn=e.target.closest('[data-remove-attr]');if(!btn)return;snapshot();selected().attributes.splice(Number(btn.dataset.removeAttr),1);persist();renderAttributes(selected());renderPreview(selected());});
+  $('skill-form').addEventListener('submit',e=>{e.preventDefault();const c=selected(),input=$('skill-add'),name=safeText(input.value,140);if(!name)return;if(c.skills.some(s=>s.name.toLowerCase()===name.toLowerCase())){toast('Skill sudah ada.');return}snapshot();c.skills.push({id:uid(),name,level:1});input.value='';persist();renderSkills(c);renderPreview(c);input.focus();toast('Skill ditambahkan.');});
+  $('skills').addEventListener('change',e=>{
+    const c=selected();
+    if(e.target.matches('[data-skill-name]')){
+      const s=c.skills.find(x=>x.id===e.target.dataset.skillName);if(!s)return;
+      const name=safeText(e.target.value,140);
+      if(!name||c.skills.some(x=>x.id!==s.id&&x.name.toLowerCase()===name.toLowerCase())){toast('Nama Skill kosong atau sudah digunakan.');renderSkills(c);return;}
+      if(s.name!==name){snapshot();s.name=name;persist();renderPreview(c);}renderSkills(c);
+    }else if(e.target.matches('[data-level-input]')){
+      const s=c.skills.find(x=>x.id===e.target.dataset.levelInput);if(!s)return;
+      const value=normalizeNumber(e.target.value);
+      if(s.level!==value){snapshot();s.level=value;persist();renderPreview(c);}renderSkills(c);
+    }
+  });
+  $('skills').addEventListener('click',e=>{
+    const btn=e.target.closest('[data-remove-skill],[data-level-plus],[data-level-minus]');if(!btn)return;
+    const c=selected();
+    snapshot();if(btn.hasAttribute('data-remove-skill')){c.skills=c.skills.filter(s=>s.id!==btn.dataset.removeSkill)}
+    else {const id=btn.dataset.levelPlus||btn.dataset.levelMinus,s=c.skills.find(s=>s.id===id);if(!s)return;s.level=Math.max(1,Math.min(1000000,s.level+(btn.hasAttribute('data-level-plus')?1:-1)));}
+    persist();renderSkills(c);renderPreview(c);
+  });
+  $('copy-status').addEventListener('click',async()=>{
+    const value=statusText(selected());
+    try {if(!navigator.clipboard?.writeText)throw Error('Clipboard API unavailable');await navigator.clipboard.writeText(value);toast('Status berhasil disalin!');}
+    catch {const t=document.createElement('textarea');t.value=value;t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.select();try{const ok=document.execCommand('copy');if(!ok)throw Error('Copy failed');toast('Status berhasil disalin!');}catch{toast('Salin otomatis gagal. Blok teks di pratinjau untuk menyalin.')}finally{t.remove();}}
+  });
+  const dlg=$('new-character-dialog');
+  $('add-character').addEventListener('click',()=>{$('new-char-name').value='';dlg.showModal();$('new-char-name').focus();});
+  $('cancel-new').addEventListener('click',()=>dlg.close());
+  $('new-char-form').addEventListener('submit',e=>{e.preventDefault();const name=$('new-char-name').value.trim();if(!name)return;const c={id:uid(),isMain:false,name,age:'',core:1,aspect:'',attributes:[],skills:[]};snapshot();state.characters.push(c);state.selectedId=c.id;persist();dlg.close();renderAll();toast('Karakter dibuat.');});
+  $('delete-char').addEventListener('click',()=>{const c=selected();if(c.isMain)return;if(!confirm('Hapus karakter "'+c.name+'"? Data karakter ini akan hilang dari aplikasi.'))return;snapshot();state.characters=state.characters.filter(x=>x.id!==c.id);state.selectedId=state.characters[0].id;persist();renderAll();toast('Karakter dihapus.');});
+  $('duplicate-char').addEventListener('click',()=>{const c=selected();const dup={...structuredClone(c),id:uid(),isMain:false,name:c.name+' (Copy)',skills:c.skills.map(s=>({...s,id:uid()}))};snapshot();state.characters.push(dup);state.selectedId=dup.id;persist();renderAll();toast('Karakter diduplikasi tanpa label protagonis.');});
+  $('export-data').addEventListener('click',()=>{
+    const blob=new Blob([JSON.stringify({...state,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='kiri-status-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Backup JSON dibuat.');
+  });
+  $('import-data').addEventListener('click',()=>$('import-file').click());
+  $('import-file').addEventListener('change',async e=>{
+    const file=e.target.files?.[0];if(!file)return;
+    try{
+      if(file.size>2_000_000)throw Error('File terlalu besar.');
+      const parsed=JSON.parse(await file.text());
+      const incoming=validateState(parsed);
+      if(!confirm('Pulihkan backup? Data yang ada akan digantikan. Unduh backup saat ini dahulu jika diperlukan.'))return;
+      snapshot();state=incoming;
+      persist();renderAll();toast('Backup berhasil dipulihkan.');
+    }catch(err){toast('Gagal memulihkan: '+err.message)}finally{e.target.value=''}
+  });
+  renderAll();
+  // Test write access at startup; do not claim autosave before verifying.
+  if(loadError){$('save-indicator').textContent='⚠ Data tersimpan tidak terbaca — jangan menimpa backup';toast('Data lama tidak terbaca. Ekspor backup sebelum melanjutkan.');return;}
+  try{const probe=KEY+'-probe';localStorage.setItem(probe,'ok');localStorage.removeItem(probe);persist();}
+  catch{storageOK=false;$('save-indicator').textContent='⚠ Penyimpanan tidak tersedia — gunakan Backup JSON';toast('Penyimpanan tidak tersedia. Gunakan Backup JSON!');}
+})();
+</script>
+</body>
+</html>
